@@ -4,6 +4,9 @@ const { getEntryNames, getEntryBaseDir } = require('./util')
 const fse = require('fs-extra')
 const fs = require('fs')
 
+// 外部依赖
+const externals = ['jquery']
+
 const getVendorsPath = () => {
   return path.resolve(process.cwd(), 'dist/js/vendors/index.js')
 }
@@ -16,10 +19,18 @@ const getCommonsPath = () => {
   return path.resolve(process.cwd(), 'dist/js/commons/index.js')
 }
 
+// 构建自定义模块
 const buildCommons = () => {
+  const commonModuleNames = getEntryNames('src/commons')
+
   const b = browserify()
 
-  b.require('commons-lang')
+  commonModuleNames.forEach(name => {
+    b.require(path.resolve(process.cwd(), `src/commons/${name}.js`), {
+      expose: `commons-${name}` // 自定义模块名
+    })
+  })
+
 
   b.bundle((err, buf) => {
     if (err) {
@@ -31,11 +42,12 @@ const buildCommons = () => {
   })
 }
 
-const buildVendors = (externals = ['jquery']) => {
+// 构建第三方模块
+const buildVendors = () => {
   const b = browserify()
 
-  externals.forEach(pkg => {
-    b.require(pkg)
+  externals.forEach(name => {
+    b.require(name)
   })
 
   b.bundle((err, buf) => {
@@ -48,25 +60,34 @@ const buildVendors = (externals = ['jquery']) => {
   })
 }
 
+// 构建页面入口
 const bundlePages = (pageName) => {
   const b = browserify()
   const entry = path.resolve(getEntryBaseDir(), `${pageName}.js`)
-    
+  const commonModuleNames = getEntryNames('src/commons')
+  
   console.log(entry);
 
   b.add(entry)
-   .external('commons-lang')
-   .external('jquery')
-   .bundle((err, buf) => {
-    if (err) {
-      console.error(err);
-      return
-    }
-    
-    fse.ensureFileSync(getPageJsPath(pageName))
-    fs.writeFileSync(getPageJsPath(pageName), buf)
-    
+
+  commonModuleNames.forEach(name => {
+    b.external(`commons-${name}`)
   })
+
+  externals.forEach(name => {
+    b.external(name)
+  })
+
+  b.bundle((err, buf) => {
+  if (err) {
+    console.error(err);
+    return
+  }
+  
+  fse.ensureFileSync(getPageJsPath(pageName))
+  fs.writeFileSync(getPageJsPath(pageName), buf)
+  
+})
 }
 
 const run = () => {

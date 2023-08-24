@@ -1,11 +1,15 @@
 const $ = require('jquery')
 
-require('commons-lang')
+const lang = require('commons-lang')
+const foo = require('commons-foo')
 
 const hello = () => {
   console.log('home:', $);
   $('#app').html('Hello, home!')
 }
+
+lang()
+foo()
 
 hello()
 
