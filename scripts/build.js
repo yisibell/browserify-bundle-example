@@ -31,7 +31,6 @@ const buildCommons = () => {
     })
   })
 
-
   b.bundle((err, buf) => {
     if (err) {
       console.error(err);
@@ -69,6 +68,9 @@ const bundlePages = (pageName) => {
   console.log(entry);
 
   b.add(entry)
+  // b.require(entry, {
+  //   expose: pageName
+  // })
 
   commonModuleNames.forEach(name => {
     b.external(`commons-${name}`)
